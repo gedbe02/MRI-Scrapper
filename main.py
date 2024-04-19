@@ -3,12 +3,6 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 import csv
 
-
-# Scrap values
-# Template notes - Idea: Open link and show user the site to scroll through. Close when done
-# Ex: Spikes at t=X1, t=X2..., Noisy throughout, [Nothing], Wrap-around at [], etc.
-
-
 def get_spikes(fd_dvars_spikes, outlier_spikes):
     '''
     Description:
@@ -143,7 +137,6 @@ def get_fuzz(bold_fuzz, std_fuzz):
 
     return bold_string, std_string, bold_fuzz, std_fuzz
 
-
 def format_notes(strings):
     '''
     Description:
@@ -154,8 +147,21 @@ def format_notes(strings):
         notes:string
     '''
     notes = ""
-    for s in strings.values():
-        notes += s
+    # Give an order to it
+    if "noisy" in strings:
+        notes += strings["noisy"]
+    if "all_spikes" in strings:
+        notes += strings["all_spikes"]
+    if "fd_dvar_spikes" in strings:
+        notes += strings["fd_dvar_spikes"]
+    if "bold_wraps" in strings:
+        notes += strings["bold_wraps"]
+    if "std_wraps" in strings:
+        notes += strings["std_wraps"]
+    if "bold_fuzz" in strings:
+        notes += strings["bold_fuzz"]
+    if "bold_fuzz" in strings:
+        notes += strings["std_fuzz"]
     return notes
 
 def assess_scans(url):
@@ -196,7 +202,7 @@ def assess_scans(url):
                 if choice.lower() == "y":
                     del notes["noisy"]
             else:
-                notes["noisy"] = "Noisy throughout. "
+                notes["noisy"] = "Noise throughout. "
         elif option == 2: # Spikes
             if "fd_dvar_spikes" in notes or "all_spikes" in notes: 
                 # Delete it if wanted
@@ -299,42 +305,46 @@ def get_data(url):
     return values
 
 
-
-url = "https://joanna-hernandez.github.io/mriqc-PSANDS/sub-103_ses-1_task-SRT_bold.html"
-# get_data(url)
-# print(assess_scans(url))
-
-def get_updated_rows(starting_row_num):
+def get_updated_rows(starting_row_num, num_rows):
     # Read and update rows
     with open("data/mri_data.csv", "r") as f:
         csvreader = csv.reader(f)
-        updated_rows = []
+        new_rows = []
         for i,row in enumerate(csvreader):
+            if i == 0:
+                new_rows.append(row[:8])
             if i >= starting_row_num:
+                print(f"{i-starting_row_num}/{num_rows}")
+                new_data = [0]*8
                 if row[1] == "Ben":
                     url = row[3]
                     values = get_data(url)
                     notes = assess_scans(url)
                     
-                    print(values)
-                    print(notes)
-                    row[4] = notes
-                    row[5] = values["fd_mean"]
-                    row[6] = values["tsnr"]
-                    row[7] = values["fwhm_x"]
-                    row[8] = values["fwhm_y"]
-                    row[9] = values["fwhm_z"]
-                    row[10] = values["dvars_std"]    
-                updated_rows.append(row)
-                break
+                    # Create new row
+                    new_data[0] = notes
+                    new_data[1] = values["fd_mean"]
+                    new_data[2] = values["tsnr"]
+                    new_data[3] = values["fwhm_x"]
+                    new_data[4] = values["fwhm_y"]
+                    new_data[5] = values["fwhm_z"]
+                    new_data[6] = values["dvars_std"]    
+                else:
+                    new_data[0] = "N/A"
+                new_data[7] = i
+                new_rows.append(new_data)
+                if i-starting_row_num>num_rows:
+                    last_row = i
+                    break
 
     # Write to output file
     with open("data/output.csv", "w") as f:
         csvwriter = csv.writer(f)
-        csvwriter.writerows(updated_rows)
+        csvwriter.writerows(new_rows)
+    return last_row
 
 
-get_updated_rows(104)
+print("\nLast row looked at:", get_updated_rows(starting_row_num=138, num_rows=14))
 
 
 
