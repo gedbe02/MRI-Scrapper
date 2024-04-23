@@ -160,7 +160,7 @@ def format_notes(strings):
         notes += strings["std_wraps"]
     if "bold_fuzz" in strings:
         notes += strings["bold_fuzz"]
-    if "bold_fuzz" in strings:
+    if "std_fuzz" in strings:
         notes += strings["std_fuzz"]
     return notes
 
@@ -313,8 +313,11 @@ def get_updated_rows(starting_row_num, num_rows):
         for i,row in enumerate(csvreader):
             if i == 0:
                 new_rows.append(row[:8])
-            if i >= starting_row_num:
-                print(f"{i-starting_row_num}/{num_rows}")
+            elif (i+1)-starting_row_num >= num_rows:
+                last_row = i
+                break
+            elif i+1 >= starting_row_num:
+                print(f"{i-(starting_row_num-1)+1}/{num_rows}")
                 new_data = [0]*8
                 if row[1] == "Ben":
                     url = row[3]
@@ -333,9 +336,7 @@ def get_updated_rows(starting_row_num, num_rows):
                     new_data[0] = "N/A"
                 new_data[7] = i
                 new_rows.append(new_data)
-                if i-starting_row_num>num_rows:
-                    last_row = i
-                    break
+                
 
     # Write to output file
     with open("data/output.csv", "w") as f:
@@ -344,7 +345,7 @@ def get_updated_rows(starting_row_num, num_rows):
     return last_row
 
 
-print("\nLast row looked at:", get_updated_rows(starting_row_num=138, num_rows=14))
+print("\nLast row looked at:", get_updated_rows(starting_row_num=153, num_rows=1))
 
 
 
